@@ -82,10 +82,10 @@ def main():
     validate_env()
     a = api.Api(username=env_username,password=env_password,otp_key=env_otp_key,domain_number=env_domain_number,contract=env_contract)
 
-
+    interval : int = int(env_interval)
     while True:
         check_for_updates(a)
-        time.sleep(30)
+        time.sleep(60 * interval)
 
 if __name__ == "__main__":
     main()
