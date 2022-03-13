@@ -9,7 +9,7 @@ base_url = "https://ksb.1blu.de"
 
 
 default_headers = {
-    "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:98.0) Gecko/20100101 Firefox/98.0",
+    "User-Agent": "Mozilla/5.0",
 }
 
 class Api:
@@ -50,7 +50,7 @@ class Api:
 
         content = dns_records.to_form_url_encoded(self._records)
         headers = {
-            "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:98.0) Gecko/20100101 Firefox/98.0",
+            "User-Agent": "Mozilla/5.0",
             "Content-Type" : "application/x-www-form-urlencoded",
             "Content-Length" : str(len(content)),
         }
