@@ -9,12 +9,14 @@ import time
 logging_level = {"INFO": logging.INFO, "WARNING": logging.WARNING, "ERROR" : logging.ERROR, "DEBUG" : logging.DEBUG}
 
 def get_env_opt(key, default):
+    """Get optional environment varaiable. If it is not set, the default is returned."""
     val = os.environ.get(key)
     if(val is None):
         return default
     return val
 
 def get_env_req(key, err_message : str):
+    """Get required environment variable. If it is no set, an error is logged and the program exits."""
     val = os.environ.get(key)
     if(val is None):
         logging.error(err_message)
@@ -34,6 +36,7 @@ env_logging_level = get_env_opt("LOGGING", "INFO")
 env_contract = get_env_req("CONTRACT", "Please define CONTRACT. Exiting...")
 
 def validate_env():
+    """Validates, if the environment variables have valid values."""
     if(env_rrtype not in ["A","AAAA"]):
         logging.error("RRTYPE must be either 'A' or 'AAAA'. Exiting...")
         exit(1)
@@ -50,15 +53,18 @@ def validate_env():
 
 
 def get_my_public_ip(v6 : bool) -> str:
+    """Retrievs own ip address"""
     response = requests.get(f"https://{'v6' if v6 else 'v4'}.ident.me")
     return response.text
 
 def get_remote_ip(v6 : bool) -> str:
+    """Retrievs the ip address of the domain"""
     res = resolver.resolve(qname=env_domain+env_subdomain,rdtype=env_rrtype)
     return res[0].to_text()
 
 
 def check_for_updates(api : api.Api):
+    """Checks, if own ip address differs from the servers. If that is the case, the dns-records are updated."""
     logging.info("checking for changes...")
     my_ip = get_my_public_ip(env_rrtype == "AAAA")
     remote_ip = get_remote_ip(env_rrtype == "AAAA")
@@ -70,6 +76,7 @@ def check_for_updates(api : api.Api):
     
 
 def main():
+    """Main funcition."""
     logging.basicConfig(stream=sys.stdout,level=logging_level[env_logging_level])
     logging.info("starting...")
     validate_env()

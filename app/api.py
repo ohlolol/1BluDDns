@@ -13,7 +13,7 @@ default_headers = {
 }
 
 class Api:
-
+    """Api to the 1Blu server"""
     def __init__(self, username : str, password : str, otp_key : str, domain_number : str, contract:str) -> None:
         self._dns_base_url : str = f"{base_url}/{contract}/domain/{domain_number}/dns"
         self._session : session.Session = session.Session(username, password, otp_key)
@@ -22,7 +22,7 @@ class Api:
 
 
     def fetch_records(self) -> bool:
-
+        """Fetches the current dns-records from the 1blu interface. They are recieved as json inside the html-document"""
         response = self._session.get(url=self._dns_base_url)
 
 
@@ -43,6 +43,7 @@ class Api:
 
 
     def push_records(self):
+        """Pushes dns-records to 1blu. This is done via a POST request with the records encoded as form-url."""
         if(self._records is None):
             logging.error("cant push records, because records are None")
             return
@@ -61,6 +62,7 @@ class Api:
 
 
     def update_address(self, subdomain :str, rrtype: str, new_target:str):
+        """Updates a url on 1Blu by fetching the current records, updating them and pushing them back again."""
         self.fetch_records()
         if(self._records is None):
             logging.error("fetching dns-records failed!")
