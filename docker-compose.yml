@@ -1,0 +1,13 @@
+version: '3'
+services:
+  1blu-ddns:
+    build: .
+    restart: unless-stopped
+    environment:
+      - USERNAME=1234567
+      - PASSWORD=password
+      - DOMAIN_NUMBER=123456
+      - OTP_KEY=ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ
+      - DOMAIN=example.de
+      - LOGGING=INFO
+      - CONTRACT=123123
