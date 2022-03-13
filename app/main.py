@@ -59,7 +59,7 @@ def get_my_public_ip(v6 : bool) -> str:
 
 def get_remote_ip(v6 : bool) -> str:
     """Retrievs the ip address of the domain"""
-    res = resolver.resolve(qname=env_domain+env_subdomain,rdtype=env_rrtype)
+    res = resolver.resolve(qname=f"{env_subdomain}.{env_domain}",rdtype=env_rrtype)
     return res[0].to_text()
 
 
