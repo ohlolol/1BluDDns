@@ -195,6 +195,11 @@ class Session:
         response = self._session.get(url=URL_START,headers=default_headers)
         return response.url == URL_START
 
+    def renew(self):
+        self._create()
+        self._log_in()
+
+
     def get(self, url:str, headers=default_headers,data=None):
         return self._session.get(url, headers=headers,data=data)
 

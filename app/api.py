@@ -56,6 +56,13 @@ class Api:
         logging.debug(f"Pushed records: {self._records}.")
         #TODO: validate result
         return True
+    
+    def renew_session_if_needed(self):
+        if(self._session.is_session_valid()):
+            return
+        
+        logging.info("Session expired. Creating new one...")
+        self._session.renew()
 
     def update_address(self, subdomain :str, rrtype: str, new_target:str) -> bool:
         """Updates a url on 1Blu by fetching the current records, updating them and pushing them back again."""
