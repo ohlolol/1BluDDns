@@ -73,9 +73,9 @@ class Api:
         logging.info(f"modifiing record: {hostname} [{rrtype}] to address: '{new_target}'")
 
         for record in self._records:
-            if(record["hostname"] is not hostname):
+            if(record["hostname"] != hostname):
                 continue
-            if(record["type"] is not rrtype):
+            if(record["type"] != rrtype):
                 continue
 
             record["target"] = new_target
