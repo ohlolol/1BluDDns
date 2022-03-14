@@ -1,17 +1,22 @@
 import re
+from tracemalloc import start
 from typing import Optional
 import requests
 import logging
 import pyotp
 
-base_url = "https://ksb.1blu.de"
+URL_BASE = "https://ksb.1blu.de"
+URL_LOGIN = f"{URL_BASE}/"
+URL_2FA = f"{URL_BASE}/2fa/"
+URL_START = f"{URL_BASE}/start/"
+URL_2FA_CHECK = f"{URL_BASE}/2fa_check/"
+
 default_headers = {
     "User-Agent": "Mozilla/5.0",
 }
 
 class Session:
     """Represents a session with the server and handles the login"""
-    #TODO: Error, when a opt is needed but not given
     def __init__(self, username : str, password : str, otp_key : str) -> None:
         self._username = username
         self._password = password
@@ -23,9 +28,10 @@ class Session:
 
     def _create(self) -> None:
         """Creates new session"""
-        response = self._session.get(url=base_url, headers=default_headers)
+        #TODO: disable cookie banner
+        response = self._session.get(url=URL_LOGIN, headers=default_headers)
         if(response.status_code != 200):
-            logging.error(f"Failed to create new session: '{base_url}' responded with status-code {response.status_code}.")
+            logging.error(f"Failed to create new session: '{URL_LOGIN}' responded with status-code {response.status_code}.")
             return
 
         if('PHPSESSID' not in self._session.cookies):
@@ -60,18 +66,8 @@ class Session:
         """Does the login of the current session."""
         logging.info("Logging into account...")
 
-        self._password_login()
-        if(self._totp is not None):
-            self._2fa_login()
-        
-        self._validate_successful_login()
 
-        
-        
-
-    def _password_login(self):
-        """Does the password login for the current Session."""
-        csrf_token = self._get_csrf_token(base_url)
+        csrf_token = self._get_csrf_token(URL_LOGIN)
         if(csrf_token == ""):
             logging.error("Failed to log in: no csrf-token")
             return
@@ -83,47 +79,52 @@ class Session:
             "Content-Length" : str(len(content)),
         }
 
-        response = self._session.post(url=base_url,headers=headers,data=content)
+        response = self._session.post(url=URL_LOGIN,headers=headers,data=content)
         
         if(not self._validate_password_login(response)):
+            logging.error("Failed to log in: Validation failed.")
             return
 
         logging.info("Password-login successful.")
 
+        opt_needed = response.url == URL_2FA
+        
+        if(opt_needed):
+            self._2fa_login()
+        
+        if(not self.is_session_valid()):
+            logging.error("Failed to log in: Verification failed.")
+            return
+
+        
+
     def _validate_password_login(self, response: requests.Response) -> bool:
         """Validates, if the Password login was sucessful by checking the title of the response. If not it logs an error message"""
         if(response.status_code != 200):
-            logging.error(f"Failed to log in : '{base_url}' responded with status-code {response.status_code}")
+            logging.error(f"Failed to log in : '{URL_LOGIN}' responded with status-code {response.status_code}")
             return False
 
-        re_title = re.search(r"<title>(.*?)</title>", response.text)
-        
-        if(re_title is None):
-            logging.error("Failed to log in: Unknown error (returned to unknown page with no title)")
-            return False
-        
-        title = re_title.group(1)
 
-        if(title == "Kundenlogin"):
+        if(response.url == URL_LOGIN):
             re_errors = re.findall(r"<div[^>]*?class=\"alert alert-danger\"[^>]*?>([\s\S]*?)<\/div>", response.text)
             for error in re_errors:
                 
                 
                 if("Ungültiges CSRF-Token" in error):
-                    logging.error('Failed to log in: Inavlid CSRF-Token')
+                    logging.error('Failed to log in: Inavlid CSRF-Token.')
                     return False
 
                 if("Falsche Zugangsdaten" in error):
-                    logging.error('Failed to log in: Wrong Credentials')
+                    logging.error('Failed to log in: Wrong Credentials.')
                     return False
                 
-                logging.debug(f"Found error message on page: '{error}'")
+                logging.debug(f"Found error message on page: '{error}'.")
             
-            logging.error('Failed to log in: Unknown error (returned to login page)')
+            logging.error('Failed to log in: Unknown error (returned to login page).')
             return False
 
-        if(title != "2-Faktor-Authentisierung"):
-            logging.error(f"Failed to log in: Unknown error (returned to page: '{title}')")
+        if(response.url not in [URL_2FA, URL_START]):
+            logging.error(f"Failed to log in: Redirected to unknown url: '{response.url}'")
             return False
 
         return True
@@ -131,15 +132,18 @@ class Session:
     def _2fa_login(self):
         """Does the 2fa for the current Session"""
         logging.info("2fa...")
-        csrf_token = self._get_csrf_token(f"{base_url}/2fa/")
+
+        if(self._totp is None):
+            logging.error("Failed to 2fa: No OTP-Key")
+            return
+
+        csrf_token = self._get_csrf_token(URL_2FA)
 
         if(csrf_token == ""):
             logging.error("Failed to 2fa: No csrf-token")
             return
 
-        if(self._totp is None):
-            logging.error("Failed to 2fa: No OTP-Key")
-            return
+
 
         auth_code = self._totp.now()
         content = f"_auth_code={auth_code}&_csrf_token={csrf_token}"
@@ -149,7 +153,7 @@ class Session:
             "Content-Length" : str(len(content)),
         }
         
-        response = self._session.post(url=f"{base_url}/2fa_check/",headers=headers,data=content)
+        response = self._session.post(url=URL_2FA_CHECK,headers=headers,data=content)
 
         if(not self._validate_2fa_login(response)):
             return
@@ -159,22 +163,13 @@ class Session:
     def _validate_2fa_login(self, response : requests.Response) -> bool:
         """Validates, if the 2fa was successful by checking the title of the response. If not it logs an error message"""
         if(response.status_code != 200):
-            logging.error(f"Failed to 2fa: '{base_url}' responded with status-code {response.status_code}")
+            logging.error(f"Failed to 2fa: '{URL_2FA}' responded with status-code {response.status_code}")
             return False
         
-        re_title = re.search(r"<title>(.*?)</title>", response.text)
-        
-        if(re_title is None):
-            logging.error("Failed to log in: Unknown error (returned to unknown page with no title)")
-            return False
-        
-        title = re_title.group(1)
-
-        if(title == "2-Faktor-Authentisierung"):
+        if(response.url == URL_2FA):
             re_errors = re.findall(r"<div[^>]*?class=\"alert alert-danger\"[^>]*?>([\s\S]*?)<\/div>", response.text)
             for error in re_errors:
                 
- 
                 if("Ungültiges CSRF-Token" in error):
                     logging.error('Failed to 2fa: Inavlid CSRF-Token')
                     return False
@@ -189,32 +184,20 @@ class Session:
             return False
 
 
-        if(title != "Start"):
-            logging.error("Failed to log in: Unknown error (returned to page: '{title}')")
+        if(response.url != URL_START):
+            logging.error(f"Failed to log in: Unknown error (redirected to page: '{response.url}')")
             return False
 
         return True
     
-    def _validate_successful_login(self) -> bool:
-        """Validates, if the login process was successful by testing if the start page can be loaded"""
-        response = self._session.get(url=f"{base_url}/start/",headers=default_headers)
-        re_title = re.search(r"<title>(.*?)</title>", response.text)
-        
-        if(re_title is None):
-            logging.error("Unsuccessful login: Returned to unknown page with no title")
-            return False
-
-        title = re_title.group(1)
-        
-        if(title != "Start"):
-            logging.error(f"Unsuccessful login: Returned to page: '{title}'")
-            return False
-
-        return True
-
+    def is_session_valid(self) -> bool:
+        """Validates, if a session is still valid and logged in"""
+        response = self._session.get(url=URL_START,headers=default_headers)
+        return response.url == URL_START
 
     def get(self, url:str, headers=default_headers,data=None):
         return self._session.get(url, headers=headers,data=data)
+
 
     def post(self, url:str, headers=default_headers,data=None):
         return self._session.post(url, headers=headers,data=data)
