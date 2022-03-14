@@ -57,9 +57,9 @@ def get_my_public_ip(v6 : bool) -> str:
     response = requests.get(f"https://{'v6' if v6 else 'v4'}.ident.me")
     return response.text
 
-def get_remote_ip(v6 : bool) -> str:
+def get_remote_ip(rrtype: str) -> str:
     """Retrievs the ip address of the domain"""
-    res = resolver.resolve(qname=f"{env_subdomain}.{env_domain}",rdtype=env_rrtype)
+    res = resolver.resolve(qname=f"{env_subdomain}.{env_domain}",rdtype=rrtype)
     return res[0].to_text()
 
 
@@ -67,7 +67,7 @@ def check_for_updates(api : api.Api):
     """Checks, if own ip address differs from the servers. If that is the case, the dns-records are updated."""
     logging.info("checking for changes...")
     my_ip = get_my_public_ip(env_rrtype == "AAAA")
-    remote_ip = get_remote_ip(env_rrtype == "AAAA")
+    remote_ip = get_remote_ip(env_rrtype)
     if(my_ip == remote_ip):
         logging.info("still up to date")
         return
