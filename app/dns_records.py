@@ -4,7 +4,7 @@ import logging
 
 
 
-def from_json(input : str) -> Optional[List[Dict]]:
+def from_json(input : str) -> List[Dict]:
     """Loads dns-records from json"""
     return json.loads(input)
 

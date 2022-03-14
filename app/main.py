@@ -65,20 +65,21 @@ def get_remote_ip(rrtype: str) -> str:
 
 def check_for_updates(api : api.Api):
     """Checks, if own ip address differs from the servers. If that is the case, the dns-records are updated."""
-    logging.info("checking for changes...")
+    logging.info("Checking for changes...")
     my_ip = get_my_public_ip(env_rrtype == "AAAA")
     remote_ip = get_remote_ip(env_rrtype)
     if(my_ip == remote_ip):
-        logging.info("still up to date")
+        logging.info("DNS records still up to date. No update needed.")
         return
-    logging.info(f"not up to date. changing '{remote_ip}' to '{my_ip}'")
-    api.update_address(env_subdomain,env_rrtype,my_ip)
-    
+    logging.info(f"DNS records are not up to date. Updating from '{remote_ip}' to '{my_ip}'.")
+    if (api.update_address(env_subdomain,env_rrtype,my_ip)):
+        logging.info("Updating sucessful.")
+        
 
 def main():
     """Main funcition."""
     logging.basicConfig(stream=sys.stdout,level=logging_level[env_logging_level])
-    logging.info("starting...")
+    logging.info("Starting...")
     validate_env()
     a = api.Api(username=env_username,password=env_password,otp_key=env_otp_key,domain_number=env_domain_number,contract=env_contract)
 
