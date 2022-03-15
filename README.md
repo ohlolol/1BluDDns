@@ -1,11 +1,39 @@
 # 1Blu DDNS
 
-This python script is used to dynamicly update the dns-records for the 1blu nameservers so, that a server is always accessible even if it't ip-address gets changed. Different to most other providers 1blu sadly has no api for this purpose. Nevertheless it is possible to achieve this service by navigating through the menus like a human would. 
+This python script is used to dynamicly update the dns-records for the 1blu nameservers so, that a server is always accessible even if its ip-address gets changed. Different to most other providers 1blu sadly has no api for this purpose. Nevertheless it is possible to achieve this service by navigating through the menus like a human would. 
 
 ## Gettings Started
 
-This service can be easily run as a docker container.
-
+This service can be simply run as a docker container.
+### Quick setup:
+```
+docker run -it -d \
+      -e USERNAME=1234567 \
+      -e PASSWORD=password \
+      -e DOMAIN_NUMBER=123456 \
+      -e OTP_KEY=ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ \
+      -e DOMAIN=example.de \
+      -e LOGGING=INFO \
+      -e CONTRACT=123123 \
+      --name=1blu-ddns \
+    jonasvoigt/1blu-ddns:latest
+```
+### Docker compose:
+```
+version: '3'
+services:
+  blu-ddns:
+    image: jonasvoigt/1blu-ddns:latest
+    restart: always
+    environment:
+      - USERNAME=1234567
+      - PASSWORD=password
+      - DOMAIN_NUMBER=123456
+      - OTP_KEY=ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ
+      - DOMAIN=example.de
+      - LOGGING=INFO
+      - CONTRACT=123123
+```
 
 ## Environment Variables
 

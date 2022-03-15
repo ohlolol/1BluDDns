@@ -1,8 +1,8 @@
 version: '3'
 services:
   1blu-ddns:
-    build: .
-    restart: unless-stopped
+    image: jonasvoigt/1blu-ddns:latest
+    restart: always
     environment:
       - USERNAME=1234567
       - PASSWORD=password
