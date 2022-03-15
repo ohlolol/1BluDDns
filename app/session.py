@@ -1,5 +1,4 @@
 import re
-from tracemalloc import start
 from typing import Optional
 import requests
 import logging
@@ -40,11 +39,10 @@ class Session:
 
         logging.info(f"Created new session with id: '{self._session.cookies['PHPSESSID']}' ")
 
-
    
     def _get_csrf_token(self, url:str) -> str:
         """Returns a csrf-token, which is located in a hidden input field inside a form"""
-        logging.info("Retrieving csrf-token...")
+        logging.debug("Retrieving csrf-token...")
         response = self._session.get(url=url,headers=default_headers)
 
         if(response.status_code != 200):
@@ -58,7 +56,7 @@ class Session:
             return ""
 
         csrf_token = re_token.group(1)
-        logging.info(f"Found csrf-token for '{url}': '{csrf_token}'")
+        logging.debug(f"Found csrf-token for '{url}': '{csrf_token}'")
         return csrf_token
 
 
@@ -80,7 +78,8 @@ class Session:
         }
 
         response = self._session.post(url=URL_LOGIN,headers=headers,data=content)
-        
+        logging.debug("Login complete. Validating...")
+
         if(not self._validate_password_login(response)):
             logging.error("Failed to log in: Validation failed.")
             return
@@ -99,12 +98,12 @@ class Session:
         
 
     def _validate_password_login(self, response: requests.Response) -> bool:
-        """Validates, if the Password login was sucessful by checking the title of the response. If not it logs an error message"""
+        """Validates, if the Password login was sucessful by checking the response. If not it logs an error message"""
         if(response.status_code != 200):
             logging.error(f"Failed to log in : '{URL_LOGIN}' responded with status-code {response.status_code}")
             return False
 
-
+        logging.debug(f"Redirected to: '{response.url}'")
         if(response.url == URL_LOGIN):
             re_errors = re.findall(r"<div[^>]*?class=\"alert alert-danger\"[^>]*?>([\s\S]*?)<\/div>", response.text)
             for error in re_errors:
@@ -131,7 +130,7 @@ class Session:
 
     def _2fa_login(self):
         """Does the 2fa for the current Session"""
-        logging.info("2fa...")
+        logging.info("Starting 2fa...")
 
         if(self._totp is None):
             logging.error("Failed to 2fa: No OTP-Key")
@@ -161,11 +160,12 @@ class Session:
         logging.info("2fa successful.")
 
     def _validate_2fa_login(self, response : requests.Response) -> bool:
-        """Validates, if the 2fa was successful by checking the title of the response. If not it logs an error message"""
+        """Validates, if the 2fa was successful by checking the response. If not it logs an error message"""
         if(response.status_code != 200):
             logging.error(f"Failed to 2fa: '{URL_2FA}' responded with status-code {response.status_code}")
             return False
         
+        logging.debug(f"Redirected to: '{response.url}'")
         if(response.url == URL_2FA):
             re_errors = re.findall(r"<div[^>]*?class=\"alert alert-danger\"[^>]*?>([\s\S]*?)<\/div>", response.text)
             for error in re_errors:
@@ -193,16 +193,21 @@ class Session:
     def is_session_valid(self) -> bool:
         """Validates, if a session is still valid and logged in"""
         response = self._session.get(url=URL_START,headers=default_headers)
-        return response.url == URL_START
+        is_valid = response.url == URL_START
+        if(is_valid):
+            logging.debug("Session still valid.")
+        else:
+            logging.debug(f"Session no longer valid: redirected to '{response.url}'.")
+        return is_valid
 
     def renew(self):
+        logging.debug("Renewing session...")
         self._create()
         self._log_in()
 
 
     def get(self, url:str, headers=default_headers,data=None):
         return self._session.get(url, headers=headers,data=data)
-
 
     def post(self, url:str, headers=default_headers,data=None):
         return self._session.post(url, headers=headers,data=data)

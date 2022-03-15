@@ -55,11 +55,13 @@ def validate_env():
 def get_my_public_ip(v6 : bool) -> str:
     """Retrievs own ip address"""
     response = requests.get(f"https://{'v6' if v6 else 'v4'}.ident.me")
+    logging.debug(f"My ip address is: '{response.text}'")
     return response.text
 
 def get_remote_ip(rrtype: str) -> str:
     """Retrievs the ip address of the domain"""
     res = resolver.resolve(qname=f"{env_subdomain}.{env_domain}",rdtype=rrtype)
+    logging.debug(f"Remote ip address is: '{res[0].text}'")
     return res[0].to_text()
 
 
@@ -78,7 +80,7 @@ def check_for_updates(api : api.Api):
 
 def main():
     """Main funcition."""
-    logging.basicConfig(stream=sys.stdout,level=logging_level[env_logging_level])
+    logging.basicConfig(stream=sys.stdout,level=logging_level[env_logging_level],format='%(asctime)s [%(levelname)s]: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
     logging.info("Starting...")
     validate_env()
     a = api.Api(username=env_username,password=env_password,otp_key=env_otp_key,domain_number=env_domain_number,contract=env_contract)
