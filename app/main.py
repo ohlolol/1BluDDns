@@ -74,6 +74,7 @@ def check_for_updates(api : api.Api):
         logging.info("DNS records still up to date. No update needed.")
         return
     logging.info(f"DNS records are not up to date. Updating from '{remote_ip}' to '{my_ip}'.")
+    api.renew_session_if_needed()
     if (api.update_address(env_subdomain,env_rrtype,my_ip)):
         logging.info("Updating sucessful.")
         
