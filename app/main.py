@@ -61,7 +61,7 @@ def get_my_public_ip(v6 : bool) -> str:
 def get_remote_ip(rrtype: str) -> str:
     """Retrievs the ip address of the domain"""
     res = resolver.resolve(qname=f"{env_subdomain}.{env_domain}",rdtype=rrtype)
-    logging.debug(f"Remote ip address is: '{res[0].to_text}'")
+    logging.debug(f"Remote ip address is: '{res[0].to_text()}'")
     return res[0].to_text()
 
 
