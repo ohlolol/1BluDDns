@@ -89,7 +89,15 @@ def main():
 
     interval : int = int(env_interval)
     while True:
-        check_for_updates(a)
+        if "," in env_subdomain:
+            tmp = env_subdomain
+            doms = env_subdomain.split()
+            for dom in doms:
+                env_subdomain = dom
+                check_for_updates(a)
+            env_subdomain = tmp
+        else:
+            check_for_updates(a)
         time.sleep(60 * interval)
 
 if __name__ == "__main__":
