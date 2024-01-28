@@ -1,3 +1,16 @@
+# 1blu ddns with multiple subdomains
+
+This is a fork with the change that you can now give multiple subdomains to update:
+
+```
+ - e SUBDOMAI='sub1,sub,sub3,'
+
+```
+
+
+
+
+
 # 1Blu DDNS
 
 This python script is used to dynamicly update the dns-records for the 1blu nameservers so, that a server is always accessible even if its ip-address gets changed. Different to most other providers 1blu sadly has no api for this purpose. Nevertheless it is possible to achieve this service by navigating through the menus like a human would. 
