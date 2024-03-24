@@ -1,5 +1,7 @@
 # 1blu ddns with multiple subdomains
 
+Update 25.03.2024: Now better performance and default debugg messages :)
+
 This is a fork with the change that you can now give multiple subdomains to update:
 
 ```
