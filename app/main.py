@@ -6,7 +6,8 @@ import api
 import sys
 import time
 
-logging_level = {"INFO": logging.INFO, "WARNING": logging.WARNING, "ERROR" : logging.ERROR, "DEBUG" : logging.DEBUG}
+
+
 
 def get_env_opt(key, default):
     """Get optional environment varaiable. If it is not set, the default is returned."""
@@ -23,17 +24,18 @@ def get_env_req(key, err_message : str):
         exit(1)
     return val
 
-
+logging_level = {"INFO": logging.INFO, "WARNING": logging.WARNING, "ERROR" : logging.ERROR, "DEBUG" : logging.DEBUG}
 env_username = get_env_req("USERNAME", "Please define USERNAME. Exiting...")
 env_domain_number = get_env_req("DOMAIN_NUMBER", "Please define DOMAIN_NUMBER. Exiting...")
 env_password = get_env_req("PASSWORD", "Please define PASSWORD. Exiting...")
 env_otp_key = get_env_opt("OTP_KEY", "")
 env_rrtype = get_env_opt("RRTYPE", "A")
 env_domain = get_env_req("DOMAIN", "Please define DOMAIN. Exiting...")
-env_subdomain = get_env_opt("SUBDOMAIN", "")
-env_interval = get_env_opt("INTERVAL", "180")
-env_logging_level = get_env_opt("LOGGING", "INFO")
+env_subdomain = get_env_req("SUBDOMAIN", "Please define SUBDOMAIN. Exiting...")
+env_interval = get_env_req("INTERVAL", "Please define INTERVAL. Exiting...")
+env_logging_level = "DEBUG"
 env_contract = get_env_req("CONTRACT", "Please define CONTRACT. Exiting...")
+
 
 def validate_env():
     """Validates, if the environment variables have valid values."""
@@ -60,8 +62,9 @@ def get_my_public_ip(v6 : bool) -> str:
 
 def get_remote_ip(rrtype: str) -> str:
     """Retrievs the ip address of the domain"""
-    qname = f"{env_subdomain}.{env_domain}" if env_subdomain != "" else env_domain
+    qname = env_domain
     res = resolver.resolve(qname=qname,rdtype=rrtype)
+    logging.debug(f"url: {qname} result: {res}")
     logging.debug(f"Remote ip address is: '{res[0].to_text()}'")
     return res[0].to_text()
 
@@ -82,23 +85,20 @@ def check_for_updates(api : api.Api):
 
 def main():
     """Main funcition."""
+        
     logging.basicConfig(stream=sys.stdout,level=logging_level[env_logging_level],format='%(asctime)s [%(levelname)s]: %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
     logging.info("Starting...")
+    
     validate_env()
     a = api.Api(username=env_username,password=env_password,otp_key=env_otp_key,domain_number=env_domain_number,contract=env_contract)
+    
 
     interval : int = int(env_interval)
+    
     while True:
-        if "," in env_subdomain:
-            tmp = env_subdomain
-            doms = env_subdomain.split()
-            for dom in doms:
-                env_subdomain = dom
-                check_for_updates(a)
-            env_subdomain = tmp
-        else:
-            check_for_updates(a)
+        check_for_updates(a)
         time.sleep(60 * interval)
 
+       
 if __name__ == "__main__":
     main()
