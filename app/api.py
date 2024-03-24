@@ -79,14 +79,16 @@ class Api:
             return False
 
         hostname = subdomain if subdomain != "" else "@"
-        logging.debug("Updating record: '{hostname}' [{rrtype}] to new address: '{new_target}'.")
+       
         num_updated = 0
         for record in self._records:
-            if(record["hostname"] != hostname):
+            if(record["hostname"] not in hostname):
                 continue
             if(record["type"] != rrtype):
                 continue
 
+            sub = record["hostname"]
+            logging.debug("Updating record: '{sub}' [{rrtype}] to new address: '{new_target}'.")
             record["target"] = new_target
             record["modified"] = "1"
             num_updated += 1
@@ -96,4 +98,3 @@ class Api:
             logging.error("Updating address failed: Pushing records failed.")
 
         return True
-
